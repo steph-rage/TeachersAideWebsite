@@ -11,7 +11,7 @@
 			<br>
 			<p>Answer choices:</p>
 			{% for i in range(number_of_choices) %}
-				<input type='radio'/>{{ letters[i] }}<textarea type='number' name='choices' cols='40' rows='2'></textarea>
+				<input type='radio' name='correct_answer'/>{{ letters[i] }}<textarea type='number' name='choices' cols='40' rows='2'></textarea>
 				<br>
 			{% endfor %}
 			<p>Select the correct answer:</p>
@@ -21,8 +21,8 @@
 		{% for question, answers in questions.items() %}
 			<li>{{ question }}</li>
 			<ol type='A'>
-			{% for answer in answers %}
-				<li>{{ answer }}</li>
+			{% for i in range(number_of_choices) %}
+				<li>{{ answers[i] }}</li>
 			{% endfor %}
 			</ol>
 		{% endfor %}
