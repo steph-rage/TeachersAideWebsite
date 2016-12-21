@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>New Test</title>
+	</head>
+	<body>
+		<h1>Create a new test</h1>
+		<p>Give your new test a name and indicate how many answer choices you would like each multiple choice question to have.</p>
+		<p>(Don't worry, you can add or subtract choices during the test)</p>
+		<form action='/EditTest' method="post"> 
+			<input type='text' name='test_name' placeholder='Test name:'/>
+			<br>
+			<input type='number' name='choices' placeholder='Answer choices'/>
+			<br>
+			<input type='submit'/>
+		</form>
+	</body>
+</html>

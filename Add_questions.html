@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Test Creator</title>
+	</head>
+	<body>
+		<h1>Editing {{ test_name }}</h1>
+		<p>Add multiple choice questions to your test</p>
+		<form method="post"> 
+			<textarea type='text' name='new_question' placeholder='Enter the next question here' cols='40' rows='5'></textarea>
+			<br>
+			<p>Answer choices:</p>
+			{% for i in range(number_of_choices) %}
+				<input type='radio'/>{{ letters[i] }}<textarea type='number' name='choices' cols='40' rows='2'></textarea>
+				<br>
+			{% endfor %}
+			<p>Select the correct answer:</p>
+			<input type='submit'/>
+		</form>
+		<ol>
+		{% for question, answers in questions.items() %}
+			<li>{{ question }}</li>
+			<ol type='A'>
+			{% for answer in answers %}
+				<li>{{ answer }}</li>
+			{% endfor %}
+			</ol>
+		{% endfor %}
+		</ol>
+	</body>
+</html>
