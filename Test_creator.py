@@ -19,7 +19,7 @@ class Handler(BaseHTTPRequestHandler):
 		number_of_choices = int(number_of_choices)
 		return Test(test_name, number_of_choices)
 
-	def load_test_editor(self, form_input, test):
+	def load_add_questions(self, form_input, test):
 		question_text = form_input[1].split('&')[0]
 		answers = []
 		correct_answer = ''
@@ -33,33 +33,58 @@ class Handler(BaseHTTPRequestHandler):
 		test.add_question(question_text, answers)
 		return test
 
+
 	#Browser sends a GET request to load the original page
 	def do_GET(self):
-		#Talk to the browser
 		self.send_response(200)
 		self.end_headers()
 
-		if 'question' in self.requestline:
+		
+		if 'editor' in self.path:
+
+			#Go to test creator
+			if 'new' in self.path:
+				with open('Templates/New_test.html') as html_file:
+					page_display = Template(html_file.read()).render()
+				self.wfile.write(bytes(page_display, 'utf8'))
+
+			#Go to main page for test editor
+			else:
+				editor_variables = {
+					'current_tests': {},
+					'path': self.path,
+				}
+				with open('Templates/Test_editor.html') as html_file:
+					page_display = Template(html_file.read()).render(editor_variables)
+				self.wfile.write(bytes(page_display, 'utf8'))
+
+		#Load home screen with login
+		else:
+			with open('Templates/Login_page.html') as html_file:
+				page_display = Template(html_file.read()).render()
+				self.wfile.write(bytes(page_display, 'utf8'))
+
+
+		'''elif 'question' in self.requestline:
 			question_number = self.requestline.split('question')[1].split('detail')[0]
 			template_vars = {
 				'question_number': question_number,
 
 			}
 			#Load html template for detail on an individual question
-			with open('question_detail.html', 'r') as html_file:
+			with open('Templates/question_detail.html', 'r') as html_file:
 				html = Template(html_file.read()).render()
 			self.wfile.write(bytes(html, 'utf8')) 
 		else:
 			#Load the html template for test creator, render using Jinja and send to browser
-			with open('New_test.html', 'r') as html_file:
+			with open('Templates/New_test.html', 'r') as html_file:
 				html = Template(html_file.read()).render()
-			self.wfile.write(bytes(html, 'utf8')) 
+			self.wfile.write(bytes(html, 'utf8')) '''
 		return
 
 	#When POST data is sent via the html forms, it will call do_POST
 	def do_POST(self):
 		global new_test
-
 		#Talk to the browser
 		self.send_response(200)
 		self.end_headers()
@@ -76,7 +101,7 @@ class Handler(BaseHTTPRequestHandler):
 			
 		#When data being submitted is a new question with answer choices
 		else:
-			new_test = self.load_test_editor(form_input, new_test)
+			new_test = self.load_add_questions(form_input, new_test)
 
 		questions_with_numbers = []
 		for question in new_test.questions:
