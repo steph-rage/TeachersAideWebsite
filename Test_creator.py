@@ -42,6 +42,7 @@ class Handler(BaseHTTPRequestHandler):
 		
 		if 'editor' in self.path:
 
+			info = self.path.split('/')
 			#Go to test creator
 			if 'new' in self.path:
 				with open('Templates/New_test.html') as html_file:
@@ -49,9 +50,10 @@ class Handler(BaseHTTPRequestHandler):
 				self.wfile.write(bytes(page_display, 'utf8'))
 
 			elif 'question' in self.requestline:
-				info = self.path.split('/')
 				new_path = info[0:-1]
+				print(new_path)
 				('/').join(new_path)
+				print(new_path)
 				test_name = parse.unquote_plus(info[2])
 				question_number = int(info[3].split('question')[1].split('detail')[0])
 				question = list(self.tests[test_name].questions.items())[question_number - 1][0]
@@ -67,6 +69,26 @@ class Handler(BaseHTTPRequestHandler):
 				with open('Templates/question_detail.html', 'r') as html_file:
 					html = Template(html_file.read()).render(template_vars)
 				self.wfile.write(bytes(html, 'utf8')) 
+
+			elif parse.unquote_plus(info[-1]) in self.tests:
+				test_name = parse.unquote_plus(info[-1])
+				test = self.tests[test_name]
+				questions_with_numbers = []
+				for question in test.questions:
+					questions_with_numbers.append(question)
+				number_of_questions = len(questions_with_numbers)
+				template_vars = {
+					'test_name_url': info[-1],
+					'test_name': test_name,
+					'number_of_choices': test.choices,
+					'letters': test.answer_choices,
+					'questions': questions_with_numbers,
+					'number_of_questions': number_of_questions,
+					'path': self.path,
+				}
+				with open('Templates/Add_questions.html', 'r') as html_file:
+					html = Template(html_file.read()).render(template_vars)
+				self.wfile.write(bytes(html, 'utf8'))
 
 			#Go to main page for test editor
 			else:

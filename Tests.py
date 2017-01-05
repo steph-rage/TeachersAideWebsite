@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 import os
 
+from urllib import parse
 from collections import OrderedDict
 
 
@@ -19,6 +20,7 @@ class Test:
 		self.answer_choices = letters[:choices]
 		self.scored_students = {}
 		self.average = 0
+		self.url_name = parse.quote_plus(name)
 
 	def add_question(self, question_text, answers):
 		self.questions[question_text] = answers
