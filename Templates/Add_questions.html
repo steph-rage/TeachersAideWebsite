@@ -6,7 +6,7 @@
 	<body>
 		<h1>Editing {{ test_name }}</h1>
 		<p>Add multiple choice questions to your test</p>
-		<form action='{{ test_name }}' method="post"> 
+		<form action='{{ test_name_url }}' method="post"> 
 			<textarea type='text' name='new_question' placeholder='Enter the next question here' cols='40' rows='5'></textarea>
 			<br>
 			<p>Answer choices:</p>
@@ -19,7 +19,7 @@
 		</form>
 		<ol>
 		{% for i in range(number_of_questions) %}
-			<li><a href='/question{{ i+1 }}detail'>{{ questions[i] }}</a></li>
+			<li><a href='{{ path }}/question{{ i+1 }}detail'>{{ questions[i] }}</a></li>
 		{% endfor %}
 		</ol>
 	</body>

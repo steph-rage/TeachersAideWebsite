@@ -7,9 +7,7 @@
 		<h1>Question {{ question_number }} on {{ test_name }}</h1>
 		<p>{{ question }}</p>
 		<ol type='A'>
-			{% for i in range(number_of_choices) %}
-				<li>{{ answers[i] }}</li>
-			{% endfor %}
+			
 		</ol>
 	</body>
 </html>

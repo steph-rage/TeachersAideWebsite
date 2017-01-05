@@ -12,7 +12,7 @@ class Handler(BaseHTTPRequestHandler):
 	def load_test_creator(self, test_name, number_of_choices):
 		#In case both forms are not filled in
 		if test_name == '' or number_of_choices == '':
-			with open('New_test.html', 'r') as html_file:
+			with open('Templates/New_test.html', 'r') as html_file:
 				html = Template(html_file.read()).render()
 			self.wfile.write(bytes(html, 'utf8'))
 		#Create an instance of class Test using input information
@@ -48,10 +48,29 @@ class Handler(BaseHTTPRequestHandler):
 					page_display = Template(html_file.read()).render()
 				self.wfile.write(bytes(page_display, 'utf8'))
 
+			elif 'question' in self.requestline:
+				info = self.path.split('/')
+				test_name = parse.unquote_plus(info[2])
+				print(test_name)
+				print(info)
+				question_number = int(info[3].split('question')[1].split('detail')[0])
+				print(question_number)
+				question = list(self.tests[test_name].questions.items())[question_number - 1][0]
+				#current_question = 
+				template_vars = {
+					'question_number': question_number,
+					'test_name': test_name,
+					'question': question,
+				}
+				#Load html template for detail on an individual question
+				with open('Templates/question_detail.html', 'r') as html_file:
+					html = Template(html_file.read()).render(template_vars)
+				self.wfile.write(bytes(html, 'utf8')) 
+
 			#Go to main page for test editor
 			else:
 				editor_variables = {
-					'current_tests': {},
+					'current_tests': self.tests,
 					'path': self.path,
 				}
 				with open('Templates/Test_editor.html') as html_file:
@@ -65,21 +84,7 @@ class Handler(BaseHTTPRequestHandler):
 				self.wfile.write(bytes(page_display, 'utf8'))
 
 
-		'''elif 'question' in self.requestline:
-			question_number = self.requestline.split('question')[1].split('detail')[0]
-			template_vars = {
-				'question_number': question_number,
-
-			}
-			#Load html template for detail on an individual question
-			with open('Templates/question_detail.html', 'r') as html_file:
-				html = Template(html_file.read()).render()
-			self.wfile.write(bytes(html, 'utf8')) 
-		else:
-			#Load the html template for test creator, render using Jinja and send to browser
-			with open('Templates/New_test.html', 'r') as html_file:
-				html = Template(html_file.read()).render()
-			self.wfile.write(bytes(html, 'utf8')) '''
+	
 		return
 
 	#When POST data is sent via the html forms, it will call do_POST
@@ -92,6 +97,9 @@ class Handler(BaseHTTPRequestHandler):
 		#Get the POST data and parse it into meaningful pieces
 		form_input = parse.unquote_plus(self.rfile.read(int(self.headers.get('content-length'))).decode('utf8')).split('=')
 		print(form_input)
+		#if form_input[0] == 'username':
+			#access teacher's profile
+
 		#When data being submitted is a name and the creation of a new test
 		if form_input[0] == 'test_name':
 			test_name = form_input[1].split('&')[0]
@@ -109,13 +117,15 @@ class Handler(BaseHTTPRequestHandler):
 		number_of_questions = len(questions_with_numbers)
 		#Variables to pass to html template
 		template_vars = {
+			'test_name_url': parse.quote_plus(new_test.name),
 			'test_name': new_test.name,
 			'number_of_choices': new_test.choices,
 			'letters': new_test.answer_choices,
 			'questions': questions_with_numbers,
 			'number_of_questions': number_of_questions,
+			'path': self.path,
 		}
-		with open('Add_questions.html', 'r') as html_file:
+		with open('Templates/Add_questions.html', 'r') as html_file:
 			html = Template(html_file.read()).render(template_vars)
 		self.wfile.write(bytes(html, 'utf8'))
 		return
