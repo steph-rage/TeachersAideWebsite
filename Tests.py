@@ -16,7 +16,8 @@ class Test:
 	def __init__(self, name, choices):
 		self.name = name
 		self.choices = choices
-		self.questions = OrderedDict()
+		self.questions = {}
+		self.question_list = []
 		self.answer_choices = letters[:choices]
 		self.scored_students = {}
 		self.average = 0
@@ -24,6 +25,7 @@ class Test:
 
 	def add_question(self, question_text, answers):
 		self.questions[question_text] = answers
+		self.question_list.append(question_text)
 
 	def administer(self):
 		#Clear the terminal so that a student cannot scroll backwards and see test answers
@@ -36,6 +38,8 @@ class Test:
 			print("That student has already taken this test. Their score was: {}".format(self.scored_students[student_name]))
 		else:
 			total_correct = 0
+
+			#Change this to work with refactored way of doing question_list
 			for question, answers in self.questions.items():
 				print("\n{}".format(question))
 				for choice in answers[:len(answers) - 1]:
