@@ -50,17 +50,18 @@ class Handler(BaseHTTPRequestHandler):
 
 			elif 'question' in self.requestline:
 				info = self.path.split('/')
+				new_path = info[0:-1]
+				('/').join(new_path)
 				test_name = parse.unquote_plus(info[2])
-				print(test_name)
-				print(info)
 				question_number = int(info[3].split('question')[1].split('detail')[0])
-				print(question_number)
 				question = list(self.tests[test_name].questions.items())[question_number - 1][0]
-				#current_question = 
 				template_vars = {
+					'path': new_path,
 					'question_number': question_number,
 					'test_name': test_name,
 					'question': question,
+					'number_of_choices': self.tests[test_name].choices,
+					'answers': self.tests[test_name].questions[question],
 				}
 				#Load html template for detail on an individual question
 				with open('Templates/question_detail.html', 'r') as html_file:
