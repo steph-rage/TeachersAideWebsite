@@ -138,6 +138,9 @@ class Handler(BaseHTTPRequestHandler):
 		for question in new_test.questions:
 			questions_with_numbers.append(question)
 		number_of_questions = len(questions_with_numbers)
+		path_to_editor = self.path.split('/')
+		path_to_editor.pop()
+		path_to_editor = ('/').join(path_to_editor)
 		#Variables to pass to html template
 		template_vars = {
 			'test_name_url': parse.quote_plus(new_test.name),
@@ -147,6 +150,7 @@ class Handler(BaseHTTPRequestHandler):
 			'questions': questions_with_numbers,
 			'number_of_questions': number_of_questions,
 			'path': self.path,
+			'path_to_editor': path_to_editor,
 		}
 		with open('Templates/Add_questions.html', 'r') as html_file:
 			html = Template(html_file.read()).render(template_vars)

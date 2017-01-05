@@ -22,5 +22,9 @@
 			<li><a href='{{ path }}/question{{ i+1 }}detail'>{{ questions[i] }}</a></li>
 		{% endfor %}
 		</ol>
+		<br>
+		<form method='get' action='{{ path_to_editor }}'>
+			<button type='submit'>Finished with test</button>
+		</form>
 	</body>
 </html>
