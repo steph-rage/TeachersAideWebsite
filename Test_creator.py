@@ -37,15 +37,20 @@ class Handler(BaseHTTPRequestHandler):
 		new_path = url_info[0:-1]
 		new_path = ('/').join(new_path)
 		test_name = parse.unquote_plus(url_info[2])
+		test = self.tests[test_name]
 		question_number = int(url_info[3].split('question')[1].split('detail')[0])
-		question = list(self.tests[test_name].questions.items())[question_number - 1][0]
+		question = test.question_list[question_number - 1]
+		answers = self.tests[test_name].questions[question]
+		correct_answer = answers[-1]
+		correct_answer_index = test.answer_choices.index(correct_answer)
 		template_vars = {
 			'path': new_path,
 			'question_number': question_number,
 			'test_name': test_name,
 			'question': question,
-			'number_of_choices': self.tests[test_name].choices,
-			'answers': self.tests[test_name].questions[question],
+			'number_of_choices': test.choices,
+			'answers': answers,
+			'correct_answer_index': correct_answer_index,
 		}
 
 		with open('Templates/question_detail.html', 'r') as html_file:
@@ -69,8 +74,8 @@ class Handler(BaseHTTPRequestHandler):
 			'test_name': test_name,
 			'number_of_choices': test.choices,
 			'letters': test.answer_choices,
-			'questions': questions_with_numbers,
-			'number_of_questions': number_of_questions,
+			'questions': test.question_list,
+			'number_of_questions': len(test.question_list),
 			'path': self.path,
 			'path_to_editor': path_to_editor,
 		}
@@ -111,6 +116,7 @@ class Handler(BaseHTTPRequestHandler):
 	def add_question_to_test(self, form_input, test):
 		question = self.parse_question_input(form_input, test)
 		test.add_question(question[0], question[1])
+		test.question_list.append(question[0])
 
 		return test
 
@@ -124,6 +130,7 @@ class Handler(BaseHTTPRequestHandler):
 		new_question = self.parse_question_input(form_input, test)
 		test.add_question(new_question[0], new_question[1])
 		test.question_list[question_number] = new_question[0]
+		print(test.question_list)
 
 		return test
 
@@ -167,7 +174,6 @@ class Handler(BaseHTTPRequestHandler):
 
 		url_info = self.path.split('/')
 		form_input = parse.unquote_plus(self.rfile.read(int(self.headers.get('content-length'))).decode('utf8')).split('=')
-		print(form_input)
 
 		#Go to test creator, where a new test is given a name and number of multiple choice answers
 		if len(url_info) >= 3 and'new' in url_info[2]:
@@ -189,12 +195,10 @@ class Handler(BaseHTTPRequestHandler):
 
 		#Change a question on the existing test and return to the add questions screen
 		elif len(form_input) >=1 and 'edited_question' in form_input[0]:
-			print('made it here 0')
 			question_number = int(form_input[0].split(' ')[1])
 			test_name = parse.unquote_plus(url_info[-1])
 			test = self.tests[test_name]
 			test = self.edit_question_on_test(question_number, form_input, test)
-			print('made it here 1')
 			self.load_add_questions(url_info, test_name)
 
 		return

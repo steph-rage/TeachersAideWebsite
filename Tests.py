@@ -25,7 +25,6 @@ class Test:
 
 	def add_question(self, question_text, answers):
 		self.questions[question_text] = answers
-		self.question_list.append(question_text)
 
 	def administer(self):
 		#Clear the terminal so that a student cannot scroll backwards and see test answers

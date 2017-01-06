@@ -9,7 +9,11 @@
 			<textarea name='edited_question {{ question_number }}' type='text' cols='40' rows='5' contenteditable="true">{{ question }}</textarea>
 			<ol type='A'>
 				{% for i in range(number_of_choices) %}
-					<li><input type='radio' name='correct_answer'/><textarea name='choices' type='text' cols='40' rows='5' contenteditable="true">{{ answers[i] }}</textarea></li>
+					<li><input 
+					{% if i == correct_answer_index %}
+						checked
+					{% endif %} 
+					type='radio' name='correct_answer'/><textarea name='choices' type='text' cols='40' rows='5' contenteditable="true">{{ answers[i] }}</textarea></li>
 				{% endfor %}
 			</ol>
 			<input type='submit'/>
