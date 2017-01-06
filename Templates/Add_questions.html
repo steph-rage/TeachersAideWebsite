@@ -6,12 +6,12 @@
 	<body>
 		<h1>Editing {{ test_name }}</h1>
 		<p>Add multiple choice questions to your test</p>
-		<form action='{{ test_name_url }}' method="post"> 
-			<textarea type='text' name='new_question' placeholder='Enter the next question here' cols='40' rows='5'></textarea>
+		<form action='{{ test_name_url }}' method="post" onsubmit='return validate();'> 
+			<textarea type='text' name='new_question' placeholder='Enter the next question here' cols='40' rows='5' required></textarea>
 			<br>
 			<p>Answer choices:</p>
 			{% for i in range(number_of_choices) %}
-				<input type='radio' name='correct_answer'/>{{ letters[i] }}<textarea type='number' name='choices' cols='40' rows='2'></textarea>
+				<input type='radio' name='correct_answer' required/>{{ letters[i] }}<textarea type='number' name='choices' cols='40' rows='2' required></textarea>
 				<br>
 			{% endfor %}
 			<p>Select the correct answer:</p>

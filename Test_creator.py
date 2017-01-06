@@ -97,7 +97,7 @@ class Handler(BaseHTTPRequestHandler):
 		return Test(test_name, number_of_choices)
 
 
-	def parse_question_input(self, form_input, test):
+	def parse_question_input(self, form_input, test, url_info):
 		question_text = form_input[1].split('&')[0]
 		answers = []
 		correct_answer = ''
@@ -107,27 +107,28 @@ class Handler(BaseHTTPRequestHandler):
 				correct_answer = form_input[i+3].split('&')[0]
 			else:
 				answers.append(next_answer)
+
 		answers.append(test.answer_choices[answers.index(correct_answer)])
 		question = [question_text, answers]
 
 		return question
 
 
-	def add_question_to_test(self, form_input, test):
-		question = self.parse_question_input(form_input, test)
+	def add_question_to_test(self, form_input, test, url_info):
+		question = self.parse_question_input(form_input, test, url_info)
 		test.add_question(question[0], question[1])
 		test.question_list.append(question[0])
 
 		return test
 
 
-	def edit_question_on_test(self, question_number, form_input, test):
+	def edit_question_on_test(self, question_number, form_input, test, url_info):
 		#Reindex question number for list
 		question_number -= 1
 
 		old_question_text = test.question_list[question_number]
 		del test.questions[old_question_text]
-		new_question = self.parse_question_input(form_input, test)
+		new_question = self.parse_question_input(form_input, test, url_info)
 		test.add_question(new_question[0], new_question[1])
 		test.question_list[question_number] = new_question[0]
 		print(test.question_list)
@@ -190,7 +191,7 @@ class Handler(BaseHTTPRequestHandler):
 
 		#Add a question to the existing test and remain on the same screen
 		elif len(form_input) >= 1 and form_input[0] == 'new_question':
-			new_test = self.add_question_to_test(form_input, new_test)
+			new_test = self.add_question_to_test(form_input, new_test, url_info)
 			self.load_add_questions(url_info, new_test.name)
 
 		#Change a question on the existing test and return to the add questions screen
@@ -198,7 +199,7 @@ class Handler(BaseHTTPRequestHandler):
 			question_number = int(form_input[0].split(' ')[1])
 			test_name = parse.unquote_plus(url_info[-1])
 			test = self.tests[test_name]
-			test = self.edit_question_on_test(question_number, form_input, test)
+			test = self.edit_question_on_test(question_number, form_input, test, url_info)
 			self.load_add_questions(url_info, test_name)
 
 		return
