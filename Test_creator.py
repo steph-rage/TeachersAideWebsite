@@ -131,7 +131,14 @@ class Handler(BaseHTTPRequestHandler):
 		new_question = self.parse_question_input(form_input, test, url_info)
 		test.add_question(new_question[0], new_question[1])
 		test.question_list[question_number] = new_question[0]
-		print(test.question_list)
+
+		return test
+
+	def delete_question_on_test(self, question_number, test):
+		question_number-=1
+		question_text = test.question_list[question_number]
+		del test.questions[question_text]
+		test.question_list.remove(question_text)
 
 		return test
 
@@ -175,7 +182,8 @@ class Handler(BaseHTTPRequestHandler):
 
 		url_info = self.path.split('/')
 		form_input = parse.unquote_plus(self.rfile.read(int(self.headers.get('content-length'))).decode('utf8')).split('=')
-
+		print(form_input)
+		
 		#Go to test creator, where a new test is given a name and number of multiple choice answers
 		if len(url_info) >= 3 and'new' in url_info[2]:
 			url_info.pop()
@@ -200,6 +208,13 @@ class Handler(BaseHTTPRequestHandler):
 			test_name = parse.unquote_plus(url_info[-1])
 			test = self.tests[test_name]
 			test = self.edit_question_on_test(question_number, form_input, test, url_info)
+			self.load_add_questions(url_info, test_name)
+
+		elif len(form_input) >= 1 and 'delete' in form_input[0]:
+			question_number = int(form_input[0].split(' ')[1])
+			test_name = parse.unquote_plus(url_info[-1])
+			test = self.tests[test_name]
+			test = self.delete_question_on_test(question_number, test)
 			self.load_add_questions(url_info, test_name)
 
 		return

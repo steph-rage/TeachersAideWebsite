@@ -19,7 +19,12 @@
 		</form>
 		<ol>
 		{% for i in range(number_of_questions) %}
-			<li><a href='{{ path }}/question{{ i+1 }}detail'>{{ questions[i] }}</a></li>
+			<li><a href='{{ path }}/question{{ i+1 }}detail'>{{ questions[i] }}</a> 
+				<form method='post' action='{{ Delete_question_path }}'>
+					<button name='delete {{ i+1 }}' type='submit'>Delete</button>
+				</form>
+			</li>
+			<br>
 		{% endfor %}
 		</ol>
 		<br>
