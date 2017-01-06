@@ -6,12 +6,10 @@
 	<body>
 		<h1>Editing question {{ question_number }} on {{ test_name }}</h1>
 		<form action='{{ path }}' method='POST'>
-			<textarea type  ='text' cols='40' rows='5' contenteditable="true">{{ question }}</textarea>
+			<textarea name='edited_question {{ question_number }}' type='text' cols='40' rows='5' contenteditable="true">{{ question }}</textarea>
 			<ol type='A'>
 				{% for i in range(number_of_choices) %}
-					<li><textarea type  ='text' cols='40' rows='5' contenteditable="true">
-						{{ answers[i] }}
-					</textarea></li>
+					<li><input type='radio' name='correct_answer'/><textarea name='choices' type='text' cols='40' rows='5' contenteditable="true">{{ answers[i] }}</textarea></li>
 				{% endfor %}
 			</ol>
 			<input type='submit'/>

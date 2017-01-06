@@ -12,27 +12,30 @@ class Handler(BaseHTTPRequestHandler):
 
 	def load_test_editor(self):
 		path = self.path.translate({ord('?'): None})
-		print(path)
 		editor_variables = {
 			'current_tests': self.tests,
 			'path': path,
 		}
+
 		with open('Templates/Test_editor.html') as html_file:
 			page_display = Template(html_file.read()).render(editor_variables)
 		self.wfile.write(bytes(page_display, 'utf8'))
+
 
 	def load_new_test(self, url_info):
 		path = ('/').join(url_info)
 		variables = {
 			'path': path
 		}
+
 		with open('Templates/New_test.html') as html_file:
 			page_display = Template(html_file.read()).render(variables)
 		self.wfile.write(bytes(page_display, 'utf8'))
 
+
 	def load_question_detail(self, url_info):
 		new_path = url_info[0:-1]
-		('/').join(new_path)
+		new_path = ('/').join(new_path)
 		test_name = parse.unquote_plus(url_info[2])
 		question_number = int(url_info[3].split('question')[1].split('detail')[0])
 		question = list(self.tests[test_name].questions.items())[question_number - 1][0]
@@ -44,14 +47,16 @@ class Handler(BaseHTTPRequestHandler):
 			'number_of_choices': self.tests[test_name].choices,
 			'answers': self.tests[test_name].questions[question],
 		}
+
 		with open('Templates/question_detail.html', 'r') as html_file:
 			html = Template(html_file.read()).render(template_vars)
 		self.wfile.write(bytes(html, 'utf8')) 
 
+
 	def load_add_questions(self, url_info, test_name):
 		test = self.tests[test_name]
 		pretty_url_info_last = parse.unquote_plus(url_info[-1])
-		test_name_url = self.path if pretty_url_info_last == test_name else self.path + '/' + parse.quote_plus(test_name)
+		test_name_url = self.path if pretty_url_info_last == test_name else self.path + '/' + test.url_name
 		questions_with_numbers = []
 		for question in test.questions:
 			questions_with_numbers.append(question)
@@ -69,9 +74,11 @@ class Handler(BaseHTTPRequestHandler):
 			'path': self.path,
 			'path_to_editor': path_to_editor,
 		}
+
 		with open('Templates/Add_questions.html', 'r') as html_file:
 			html = Template(html_file.read()).render(template_vars)
 		self.wfile.write(bytes(html, 'utf8'))
+
 
 	def create_new_test(self, test_name, number_of_choices):
 		#In case both forms are not filled in
@@ -81,9 +88,11 @@ class Handler(BaseHTTPRequestHandler):
 			self.wfile.write(bytes(html, 'utf8'))
 		#Create an instance of class Test using input information
 		number_of_choices = int(number_of_choices)
+
 		return Test(test_name, number_of_choices)
 
-	def add_question_to_test(self, form_input, test):
+
+	def parse_question_input(self, form_input, test):
 		question_text = form_input[1].split('&')[0]
 		answers = []
 		correct_answer = ''
@@ -94,9 +103,29 @@ class Handler(BaseHTTPRequestHandler):
 			else:
 				answers.append(next_answer)
 		answers.append(test.answer_choices[answers.index(correct_answer)])
-		test.add_question(question_text, answers)
+		question = [question_text, answers]
+
+		return question
+
+
+	def add_question_to_test(self, form_input, test):
+		question = self.parse_question_input(form_input, test)
+		test.add_question(question[0], question[1])
+
 		return test
 
+
+	def edit_question_on_test(self, question_number, form_input, test):
+		#Reindex question number for list
+		question_number -= 1
+
+		old_question_text = test.question_list[question_number]
+		del test.questions[old_question_text]
+		new_question = self.parse_question_input(form_input, test)
+		test.add_question(new_question[0], new_question[1])
+		test.question_list[question_number] = new_question[0]
+
+		return test
 
 
 	#Browser sends a GET request to load the original page
@@ -138,7 +167,7 @@ class Handler(BaseHTTPRequestHandler):
 
 		url_info = self.path.split('/')
 		form_input = parse.unquote_plus(self.rfile.read(int(self.headers.get('content-length'))).decode('utf8')).split('=')
-
+		print(form_input)
 
 		#Go to test creator, where a new test is given a name and number of multiple choice answers
 		if len(url_info) >= 3 and'new' in url_info[2]:
@@ -152,11 +181,21 @@ class Handler(BaseHTTPRequestHandler):
 			new_test = self.create_new_test(test_name, number_of_choices)
 			self.tests[test_name] = new_test
 			self.load_add_questions(url_info, test_name)
-			
+
 		#Add a question to the existing test and remain on the same screen
-		else:
+		elif len(form_input) >= 1 and form_input[0] == 'new_question':
 			new_test = self.add_question_to_test(form_input, new_test)
 			self.load_add_questions(url_info, new_test.name)
+
+		#Change a question on the existing test and return to the add questions screen
+		elif len(form_input) >=1 and 'edited_question' in form_input[0]:
+			print('made it here 0')
+			question_number = int(form_input[0].split(' ')[1])
+			test_name = parse.unquote_plus(url_info[-1])
+			test = self.tests[test_name]
+			test = self.edit_question_on_test(question_number, form_input, test)
+			print('made it here 1')
+			self.load_add_questions(url_info, test_name)
 
 		return
 
