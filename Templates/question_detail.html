@@ -1,10 +1,14 @@
 <!DOCTYPE html>
 <html>
+
 	<head>
 		<title>Question Editor</title>
 	</head>
+
 	<body>
+
 		<h1>Editing question {{ question_number }} on {{ test_name }}</h1>
+
 		<form action='{{ path }}' method='POST'>
 			<textarea name='edited_question {{ question_number }}' type='text' cols='40' rows='5' contenteditable="true" required>{{ question }}</textarea>
 			<ol type='A'>
@@ -18,5 +22,7 @@
 			</ol>
 			<input type='submit'/>
 		</form>
+
 	</body>
+	
 </html>

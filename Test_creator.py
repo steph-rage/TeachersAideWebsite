@@ -99,14 +99,24 @@ class Handler(BaseHTTPRequestHandler):
 
 	def parse_question_input(self, form_input, test, url_info):
 		question_text = form_input[1].split('&')[0]
+		if question_text == '':
+					self.load_add_questions(url_info, test.name)
+					return
 		answers = []
 		correct_answer = ''
-		for i in range(test.choices + 1):
-			next_answer = form_input[i+2].split('&')[0]
-			if next_answer == 'on':
-				correct_answer = form_input[i+3].split('&')[0]
-			else:
-				answers.append(next_answer)
+		try:
+			for i in range(test.choices + 1):
+				next_answer = form_input[i+2].split('&')[0]
+				if next_answer == '':
+					self.load_add_questions(url_info, test.name)
+					return
+				if next_answer == 'on':
+					correct_answer = form_input[i+3].split('&')[0]
+				else:
+					answers.append(next_answer)
+		except IndexError:
+			self.load_add_questions(url_info, test.name)
+			return
 
 		answers.append(test.answer_choices[answers.index(correct_answer)])
 		question = [question_text, answers]
@@ -181,14 +191,14 @@ class Handler(BaseHTTPRequestHandler):
 
 		url_info = self.path.split('/')
 		form_input = parse.unquote_plus(self.rfile.read(int(self.headers.get('content-length'))).decode('utf8')).split('=')
-		
+
 		#Go to test creator, where a new test is given a name and number of multiple choice answers
 		if len(url_info) >= 3 and'new' in url_info[2]:
 			url_info.pop()
 			self.load_new_test(url_info)
 
 		#Create a new instance of class Test, and go to screen to add questions to that test
-		elif len(form_input) >= 1 and form_input[0] == 'test_name':
+		elif form_input[0] == 'test_name':
 			test_name = form_input[1].split('&')[0]
 			number_of_choices = form_input[2]
 			new_test = self.create_new_test(test_name, number_of_choices)
@@ -196,21 +206,21 @@ class Handler(BaseHTTPRequestHandler):
 			self.load_add_questions(url_info, test_name)
 
 		#Add a question to the existing test and remain on the same screen
-		elif len(form_input) >= 1 and form_input[0] == 'new_question':
+		elif form_input[0] == 'new_question':
 			test_name = parse.unquote_plus(url_info[-1])
 			test = self.tests[test_name]
 			test = self.add_question_to_test(form_input, test, url_info)
 			self.load_add_questions(url_info, test_name)
 
 		#Change a question on the existing test and return to the add questions screen
-		elif len(form_input) >=1 and 'edited_question' in form_input[0]:
+		elif 'edited_question' in form_input[0]:
 			question_number = int(form_input[0].split(' ')[1])
 			test_name = parse.unquote_plus(url_info[-1])
 			test = self.tests[test_name]
 			test = self.edit_question_on_test(question_number, form_input, test, url_info)
 			self.load_add_questions(url_info, test_name)
 
-		elif len(form_input) >= 1 and 'delete' in form_input[0]:
+		elif 'delete' in form_input[0]:
 			question_number = int(form_input[0].split(' ')[1])
 			test_name = parse.unquote_plus(url_info[-1])
 			test = self.tests[test_name]

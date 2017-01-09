@@ -1,18 +1,25 @@
 <!DOCTYPE html>
 <html>
+
 	<head>
 		<title>Test Editor</title>
 	</head>
+
 	<body>
+
 		<h1>Current Tests:</h1>
+		
 		<ul>
 			{% for test_name, test in current_tests.items() %}
 			<li><a href='{{path}}/{{ test.url_name }}'>{{ test_name }}</li>
 			{% endfor %}
 		</ul>
 		<br>
+
 		<form method='post' action='{{ path }}/new'>
 			<button type='submit'>Create a new test</button>
 		</form>
+
 	</body>
+
 </html>

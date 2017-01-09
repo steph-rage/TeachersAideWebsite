@@ -1,12 +1,17 @@
 <!DOCTYPE html>
 <html>
+
 	<head>
 		<title>Test Creator</title>
 	</head>
+
 	<body>
+
 		<h1>Editing {{ test_name }}</h1>
+
 		<p>Add multiple choice questions to your test</p>
-		<form action='{{ test_name_url }}' method="post" onsubmit='return validate();'> 
+
+		<form action='{{ test_name_url }}' method="post"> 
 			<textarea type='text' name='new_question' placeholder='Enter the next question here' cols='40' rows='5' required></textarea>
 			<br>
 			<p>Answer choices:</p>
@@ -17,19 +22,37 @@
 			<p>Select the correct answer:</p>
 			<input type='submit'/>
 		</form>
+
 		<ol>
 		{% for i in range(number_of_questions) %}
 			<li><a href='{{ path }}/question{{ i+1 }}detail'>{{ questions[i] }}</a> 
 				<form method='post' action='{{ Delete_question_path }}'>
-					<button name='delete {{ i+1 }}' type='submit'>Delete</button>
+					<button class='confirm_delete' name='delete {{ i+1 }}' id='{{ i+1 }}' type='submit'>Delete</button>
 				</form>
 			</li>
 			<br>
 		{% endfor %}
 		</ol>
+
 		<br>
 		<form method='get' action='{{ path_to_editor }}'>
 			<button type='submit'>Finished with test</button>
 		</form>
+
 	</body>
+
+<script src="http://www.google.com/jsapi" type="text/javascript"></script>
+ 
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+
+<script type="text/javascript">
+ 	
+	$(document).ready(function(){
+		$('.confirm_delete').click(function () {
+        return confirm("Really delete question " + this.id + "?");
+    	});
+	});
+ 
+</script>
+
 </html>
