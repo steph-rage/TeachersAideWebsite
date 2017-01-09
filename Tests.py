@@ -1,8 +1,7 @@
 #!/usr/bin/python3
 import os
 
-from urllib import parse
-from collections import OrderedDict
+from urllib import parse, request
 
 
 #Possible answer choices for students: reasonable assumption made that teachers 

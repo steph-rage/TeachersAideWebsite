@@ -176,13 +176,11 @@ class Handler(BaseHTTPRequestHandler):
 
 
 	def do_POST(self):
-		global new_test
 		self.send_response(200)
 		self.end_headers()
 
 		url_info = self.path.split('/')
 		form_input = parse.unquote_plus(self.rfile.read(int(self.headers.get('content-length'))).decode('utf8')).split('=')
-		print(form_input)
 		
 		#Go to test creator, where a new test is given a name and number of multiple choice answers
 		if len(url_info) >= 3 and'new' in url_info[2]:
@@ -199,8 +197,10 @@ class Handler(BaseHTTPRequestHandler):
 
 		#Add a question to the existing test and remain on the same screen
 		elif len(form_input) >= 1 and form_input[0] == 'new_question':
-			new_test = self.add_question_to_test(form_input, new_test, url_info)
-			self.load_add_questions(url_info, new_test.name)
+			test_name = parse.unquote_plus(url_info[-1])
+			test = self.tests[test_name]
+			test = self.add_question_to_test(form_input, test, url_info)
+			self.load_add_questions(url_info, test_name)
 
 		#Change a question on the existing test and return to the add questions screen
 		elif len(form_input) >=1 and 'edited_question' in form_input[0]:
