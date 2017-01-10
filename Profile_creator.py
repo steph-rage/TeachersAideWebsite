@@ -1,12 +1,9 @@
 #!/usr/bin/python3
-import pickle
+import json
 
-from getpass import getpass
-from Test import Test
+from Test_creator import Test
 
 
-#This class will have a different instance for each teacher 
-#The class methods are the different modes a teacher can use
 class TeacherProfile:
 	def __init__(self, profile_name, password):
 		self.profile_name = profile_name
@@ -15,23 +12,18 @@ class TeacherProfile:
 		self.averages = {}
 		self.students = {}
 
-	#Creates an instance of class Test, calls the add question method to make 
-	#the question dictionary, and adds the test to the profile
-	def create_test(self):
-		name = input("\nNew Test\n------------------\nPlease give this test a name: ")
-		choices = 0
-		while choices not in range(2, 11):
-			choices = int(input("How many multiple choice answers would you like each question to have? Please stay between 2 and 10: "))
-		new_test = Test(name, choices)
-		number_questions = int(input("How many questions would you like to put on your test? "))
-		for i in range(number_questions):
-			new_test.add_question()
+	def save_profile(self):
+		with open(self.profile_name + '.json', mode='w', encoding='utf-8') as f:
+			json.dump(self.profile_name, f, indent=4)
+
+
+	def create_test(self, test_name, number_of_choices):
+		new_test = Test(test_name, number_of_choices)
 		self.tests[name] = new_test
 		self.averages[name] = new_test.average
-		print("\n----Test created: saved as '{}'----".format(name))
-		which_mode(self)
 
-	#Finds out which test the teacher would like to give, and calls the administer 
+	
+
 	def administer_test(self):
 		test_name = ''
 		password = ''
@@ -114,22 +106,6 @@ class TeacherProfile:
 
 
 
-#Checks for a saved teacher profile or creates a new one
-def load_teacher_profile():
-	profile_name = input("Please enter your teacher profile name: ")
-	try:
-		current_profile = pickle.load(open(profile_name, "rb"))
-	except FileNotFoundError:
-		yes_or_no = input("No teacher profile by that name exists. Would you like to create a new profile? ")
-		if yes_or_no.lower()[0] == 'y':
-			#Note: using getpass instead of input protects the user's password as they enter it
-			#but inhibits the ability of the testing bot to interact with the program.
-			#For full functionality, this could be changed to getpass
-			password = input("Please enter your desired password: ")
-			current_profile = TeacherProfile(profile_name, password)
-		else:
-			load_teacher_profile()
-	return current_profile
 
 #The function which shifts between the three available modes
 def which_mode(current_profile):

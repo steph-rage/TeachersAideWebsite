@@ -1,200 +1,127 @@
-from http.server import HTTPServer, BaseHTTPRequestHandler
-from http import cookies
+#!/usr/bin/python3
+import os
+
 from urllib import parse, request
-from jinja2 import Template
-
-import json
-
-from Tests import Test
 
 
-class Handler(BaseHTTPRequestHandler):
+#Possible answer choices for students: reasonable assumption made that teachers 
+#will not want to have more than 10 answer choices per question
+letters = ['A', "B", "C", "D", "E", "F", "G", "H", "I", "J"]
 
-	#Will eventually be taken care of by the teacher profile, once incorporated
-	tests = {}
 
-	def load_login_page(self):
-		with open('Templates/Login_page.html') as html_file:
-				page_display = Template(html_file.read()).render()
-				self.wfile.write(bytes(page_display, 'utf8'))
+#Used from within Teachers_aide any time a teacher wants to create a new test
+#or interact with an existing test
+class Test:
+	def __init__(self, name, choices):
+		self.name = name
+		self.choices = choices
+		self.questions = {}
+		self.question_list = []
+		self.answer_choices = letters[:choices]
+		self.scored_students = {}
+		self.average = 0
+		self.url_name = parse.quote_plus(name)
+
+
+	def parse_question_input(self, form_input, url_info):
+		question_text = form_input[1].split('&')[0]
+		if question_text == '':
+					return 
+		answers = []
+		correct_answer = ''
+		try:
+			for i in range(self.choices + 1):
+				next_answer = form_input[i+2].split('&')[0]
+				if next_answer == '':
+					self.load_add_questions(url_info, self.name)
+					return
+				if next_answer == 'on':
+					correct_answer = form_input[i+3].split('&')[0]
+				else:
+					answers.append(next_answer)
+		except IndexError:
+			return 
+
+		answers.append(self.answer_choices[answers.index(correct_answer)])
+		question = [question_text, answers]
+
+		return question
+
+
+	def add_question(self, form_input, url_info):
+		question = self.parse_question_input(form_input, url_info)
+		try:
+			self.questions[question[0]] = question[1]
+			self.question_list.append(question[0])
+		except TypeError:
+			pass
+
+		return self 
+
+
+	def edit_question(self, question_number, form_input, url_info):
+		question_number -= 1
+		try:
+			old_question_text = self.question_list[question_number]
+			del self.questions[old_question_text]
+			new_question = self.parse_question_input(form_input, url_info)
+			self.questions[new_question[0]] = new_question[1]
+			self.question_list[question_number] = new_question[0]
+		except TypeError:
+			pass
+
+		return self 
+
+	def delete_question(self, question_number):
+		question_number-=1
+		question_text = self.question_list[question_number]
+		del self.questions[question_text]
+		self.question_list.remove(question_text)
+
+		return self 
+
+
+	def administer(self):
+		#Clear the terminal so that a student cannot scroll backwards and see test answers
+		clear = lambda:os.system('tput reset')
+		clear()
+
+		print("-------{}-------".format(self.name))
+		student_name = input("Student name: ")
+		if student_name in self.scored_students:
+			print("That student has already taken this test. Their score was: {}".format(self.scored_students[student_name]))
+		else:
+			total_correct = 0
+
+			#Change this to work with refactored way of doing question_list
+			for question, answers in self.questions.items():
+				print("\n{}".format(question))
+				for choice in answers[:len(answers) - 1]:
+					print("{}: {}".format(letters[answers.index(choice)], choice))
+				answer = ''
+				while answer not in self.answer_choices:
+					answer = input("Your answer choice: ").upper()
+				print(answer)
+				if answer == answers[self.choices]:
+					total_correct += 1
+			score = round(total_correct / len(self.questions) * 100, 2)
+			#Give student their score immediately
+			print("\nThat's the end of the test! Your score was {}%".format(score))
+
+			#Add the student and their score to the list of students who have taken the test
+			self.scored_students[student_name] = score
+
+			#And return a new average for all students who have taken the test
+			self.average = round(((len(self.scored_students)-1)*self.average + score)/len(self.scored_students), 2)
+			return [student_name, self.average]
+
+	def show_results(self):
+		print('\nShowing student results for {}:\n---------------------'.format(self.name))
+		for student, score in self.scored_students.items():
+			print("{}        {}%".format(student, score))
+		print("------------\nAverage = {}%".format(self.average))
+
+
 	
 
-	def load_test_editor(self):
-		path = self.path.translate({ord('?'): None})
-		editor_variables = {
-			'current_tests': self.tests,
-			'path': path,
-		}
 
-		with open('Templates/Test_editor.html') as html_file:
-			page_display = Template(html_file.read()).render(editor_variables)
-		self.wfile.write(bytes(page_display, 'utf8'))
-
-
-	def load_new_test(self, url_info):
-		path = ('/').join(url_info)
-		variables = {
-			'path': path
-		}
-
-		with open('Templates/New_test.html') as html_file:
-			page_display = Template(html_file.read()).render(variables)
-		self.wfile.write(bytes(page_display, 'utf8'))
-
-
-	def load_question_detail(self, url_info):
-		new_path = url_info[0:-1]
-		new_path = ('/').join(new_path)
-		test_name = parse.unquote_plus(url_info[2])
-		test = self.tests[test_name]
-		question_number = int(url_info[3].split('question')[1].split('detail')[0])
-		question = test.question_list[question_number - 1]
-		answers = self.tests[test_name].questions[question]
-		correct_answer = answers[-1]
-		correct_answer_index = test.answer_choices.index(correct_answer)
-		template_vars = {
-			'path': new_path,
-			'question_number': question_number,
-			'test_name': test_name,
-			'question': question,
-			'number_of_choices': test.choices,
-			'answers': answers,
-			'correct_answer_index': correct_answer_index,
-		}
-
-		with open('Templates/question_detail.html', 'r') as html_file:
-			html = Template(html_file.read()).render(template_vars)
-		self.wfile.write(bytes(html, 'utf8')) 
-
-
-	def load_add_questions(self, url_info, test_name):
-		test = self.tests[test_name]
-		pretty_url_info_last = parse.unquote_plus(url_info[-1])
-		test_name_url = self.path if pretty_url_info_last == test_name else self.path + '/' + test.url_name
-		questions_with_numbers = []
-		for question in test.questions:
-			questions_with_numbers.append(question)
-		number_of_questions = len(questions_with_numbers)
-		path_to_editor = self.path.split('/')
-		path_to_editor.pop()
-		path_to_editor = ('/').join(path_to_editor)
-		template_vars = {
-			'test_name_url': test_name_url,
-			'test_name': test_name,
-			'number_of_choices': test.choices,
-			'letters': test.answer_choices,
-			'questions': test.question_list,
-			'number_of_questions': len(test.question_list),
-			'path': self.path,
-			'path_to_editor': path_to_editor,
-		}
-
-		with open('Templates/Add_questions.html', 'r') as html_file:
-			html = Template(html_file.read()).render(template_vars)
-		self.wfile.write(bytes(html, 'utf8'))
-
-
-	def create_new_test(self, test_name, number_of_choices):
-		#In case both forms are not filled in
-		if test_name == '' or number_of_choices == '':
-			with open('Templates/New_test.html', 'r') as html_file:
-				html = Template(html_file.read()).render()
-			self.wfile.write(bytes(html, 'utf8'))
-		number_of_choices = int(number_of_choices)
-
-		return Test(test_name, number_of_choices)
-
-
-
-	def do_GET(self):
-		self.send_response(200)
-		self.end_headers()
-
-		#Any get request in the editor part of the site, after successful login
-		if 'editor' in self.path:
-			url_info = self.path.split('/')
-			pretty_url_info_last = parse.unquote_plus(url_info[-1])
-
-			#Go to editable detail on a specific question which has already been entered
-			if len(url_info) >= 4 and 'question' in url_info[3]:
-				self.load_question_detail(url_info)
-
-			#Go to screen to add questions to a specific test
-			elif pretty_url_info_last in self.tests:
-				test_name = pretty_url_info_last
-				self.load_add_questions(url_info, test_name)
-
-			#Go to main page for test editor
-			else:
-				self.load_test_editor()
-
-		#Load home screen with login
-		else:
-			self.load_login_page()
-
-		return
-
-
-	def do_POST(self):
-		self.send_response(200)
-		self.end_headers()
-
-		url_info = self.path.split('/')
-		form_input = parse.unquote_plus(self.rfile.read(int(self.headers.get('content-length'))).decode('utf8')).split('=')
-
-		#Go to test creator, where a new test is given a name and number of multiple choice answers
-		if len(url_info) >= 3 and'new' in url_info[2]:
-			url_info.pop()
-			self.load_new_test(url_info)
-
-		#Create a new instance of class Test, and go to screen to add questions to that test
-		elif form_input[0] == 'test_name':
-			test_name = form_input[1].split('&')[0]
-			number_of_choices = form_input[2]
-			new_test = self.create_new_test(test_name, number_of_choices)
-			self.tests[test_name] = new_test
-			self.load_add_questions(url_info, test_name)
-
-		#Add a question to the existing test and remain on the same screen
-		elif form_input[0] == 'new_question':
-			test_name = parse.unquote_plus(url_info[-1])
-			test = self.tests[test_name]
-			test = test.add_question(form_input, url_info)
-			self.load_add_questions(url_info, test_name)
-
-		#Change a question on the existing test and return to the add questions screen
-		elif 'edited_question' in form_input[0]:
-			question_number = int(form_input[0].split(' ')[1])
-			test_name = parse.unquote_plus(url_info[-1])
-			test = self.tests[test_name]
-			test = test.edit_question(question_number, form_input, url_info)
-			self.load_add_questions(url_info, test_name)
-
-		elif 'delete' in form_input[0]:
-			question_number = int(form_input[0].split(' ')[1])
-			test_name = parse.unquote_plus(url_info[-1])
-			test = self.tests[test_name]
-			test = test.delete_question(question_number)
-			self.load_add_questions(url_info, test_name)
-
-		elif form_input[0] == 'username':
-			try:
-				username = form_input[1].split('&')[0]
-				with open(username + '.json', 'r', encoding='utf-8') as f:
-					profile_vars = json.load(f)
-				print(profile_vars)
-			except FileNotFoundError:
-				self.load_login_page()
-
-		return
-
-
-
-def run(server_class=HTTPServer, handler_class=Handler):
-    server_address = ('', 8000)
-    httpd = server_class(server_address, handler_class)
-    httpd.serve_forever()
-
-
-if __name__ == '__main__':
-	run()
