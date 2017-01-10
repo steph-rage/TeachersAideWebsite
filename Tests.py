@@ -22,8 +22,64 @@ class Test:
 		self.average = 0
 		self.url_name = parse.quote_plus(name)
 
-	def add_question(self, question_text, answers):
-		self.questions[question_text] = answers
+
+	def parse_question_input(self, form_input, url_info):
+		question_text = form_input[1].split('&')[0]
+		if question_text == '':
+					return 
+		answers = []
+		correct_answer = ''
+		try:
+			for i in range(self.choices + 1):
+				next_answer = form_input[i+2].split('&')[0]
+				if next_answer == '':
+					self.load_add_questions(url_info, self.name)
+					return
+				if next_answer == 'on':
+					correct_answer = form_input[i+3].split('&')[0]
+				else:
+					answers.append(next_answer)
+		except IndexError:
+			return 
+
+		answers.append(self.answer_choices[answers.index(correct_answer)])
+		question = [question_text, answers]
+
+		return question
+
+
+	def add_question(self, form_input, url_info):
+		question = self.parse_question_input(form_input, url_info)
+		try:
+			self.questions[question[0]] = question[1]
+			self.question_list.append(question[0])
+		except TypeError:
+			pass
+
+		return self 
+
+
+	def edit_question(self, question_number, form_input, url_info):
+		question_number -= 1
+		try:
+			old_question_text = self.question_list[question_number]
+			del self.questions[old_question_text]
+			new_question = self.parse_question_input(form_input, url_info)
+			self.questions[new_question[0]] = new_question[1]
+			self.question_list[question_number] = new_question[0]
+		except TypeError:
+			pass
+
+		return self 
+
+	def delete_question(self, question_number):
+		question_number-=1
+		question_text = self.question_list[question_number]
+		del self.questions[question_text]
+		self.question_list.remove(question_text)
+
+		return self 
+
 
 	def administer(self):
 		#Clear the terminal so that a student cannot scroll backwards and see test answers

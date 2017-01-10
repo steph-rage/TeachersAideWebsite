@@ -1,6 +1,9 @@
 from http.server import HTTPServer, BaseHTTPRequestHandler
+from http import cookies
 from urllib import parse, request
 from jinja2 import Template
+
+import json
 
 from Tests import Test
 
@@ -9,6 +12,12 @@ class Handler(BaseHTTPRequestHandler):
 
 	#Will eventually be taken care of by the teacher profile, once incorporated
 	tests = {}
+
+	def load_login_page(self):
+		with open('Templates/Login_page.html') as html_file:
+				page_display = Template(html_file.read()).render()
+				self.wfile.write(bytes(page_display, 'utf8'))
+	
 
 	def load_test_editor(self):
 		path = self.path.translate({ord('?'): None})
@@ -91,69 +100,12 @@ class Handler(BaseHTTPRequestHandler):
 			with open('Templates/New_test.html', 'r') as html_file:
 				html = Template(html_file.read()).render()
 			self.wfile.write(bytes(html, 'utf8'))
-		#Create an instance of class Test using input information
 		number_of_choices = int(number_of_choices)
 
 		return Test(test_name, number_of_choices)
 
 
-	def parse_question_input(self, form_input, test, url_info):
-		question_text = form_input[1].split('&')[0]
-		if question_text == '':
-					self.load_add_questions(url_info, test.name)
-					return
-		answers = []
-		correct_answer = ''
-		try:
-			for i in range(test.choices + 1):
-				next_answer = form_input[i+2].split('&')[0]
-				if next_answer == '':
-					self.load_add_questions(url_info, test.name)
-					return
-				if next_answer == 'on':
-					correct_answer = form_input[i+3].split('&')[0]
-				else:
-					answers.append(next_answer)
-		except IndexError:
-			self.load_add_questions(url_info, test.name)
-			return
 
-		answers.append(test.answer_choices[answers.index(correct_answer)])
-		question = [question_text, answers]
-
-		return question
-
-
-	def add_question_to_test(self, form_input, test, url_info):
-		question = self.parse_question_input(form_input, test, url_info)
-		test.add_question(question[0], question[1])
-		test.question_list.append(question[0])
-
-		return test
-
-
-	def edit_question_on_test(self, question_number, form_input, test, url_info):
-		#Reindex question number for list
-		question_number -= 1
-
-		old_question_text = test.question_list[question_number]
-		del test.questions[old_question_text]
-		new_question = self.parse_question_input(form_input, test, url_info)
-		test.add_question(new_question[0], new_question[1])
-		test.question_list[question_number] = new_question[0]
-
-		return test
-
-	def delete_question_on_test(self, question_number, test):
-		question_number-=1
-		question_text = test.question_list[question_number]
-		del test.questions[question_text]
-		test.question_list.remove(question_text)
-
-		return test
-
-
-	#Browser sends a GET request to load the original page
 	def do_GET(self):
 		self.send_response(200)
 		self.end_headers()
@@ -178,10 +130,8 @@ class Handler(BaseHTTPRequestHandler):
 
 		#Load home screen with login
 		else:
-			with open('Templates/Login_page.html') as html_file:
-				page_display = Template(html_file.read()).render()
-				self.wfile.write(bytes(page_display, 'utf8'))
-	
+			self.load_login_page()
+
 		return
 
 
@@ -209,7 +159,7 @@ class Handler(BaseHTTPRequestHandler):
 		elif form_input[0] == 'new_question':
 			test_name = parse.unquote_plus(url_info[-1])
 			test = self.tests[test_name]
-			test = self.add_question_to_test(form_input, test, url_info)
+			test = test.add_question(form_input, url_info)
 			self.load_add_questions(url_info, test_name)
 
 		#Change a question on the existing test and return to the add questions screen
@@ -217,15 +167,24 @@ class Handler(BaseHTTPRequestHandler):
 			question_number = int(form_input[0].split(' ')[1])
 			test_name = parse.unquote_plus(url_info[-1])
 			test = self.tests[test_name]
-			test = self.edit_question_on_test(question_number, form_input, test, url_info)
+			test = test.edit_question(question_number, form_input, url_info)
 			self.load_add_questions(url_info, test_name)
 
 		elif 'delete' in form_input[0]:
 			question_number = int(form_input[0].split(' ')[1])
 			test_name = parse.unquote_plus(url_info[-1])
 			test = self.tests[test_name]
-			test = self.delete_question_on_test(question_number, test)
+			test = test.delete_question(question_number)
 			self.load_add_questions(url_info, test_name)
+
+		elif form_input[0] == 'username':
+			try:
+				username = form_input[1].split('&')[0]
+				with open(username + '.json', 'r', encoding='utf-8') as f:
+					profile_vars = json.load(f)
+				print(profile_vars)
+			except FileNotFoundError:
+				self.load_login_page()
 
 		return
 
