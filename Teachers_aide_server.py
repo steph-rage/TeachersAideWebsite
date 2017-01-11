@@ -1,9 +1,9 @@
 from http.server import HTTPServer, BaseHTTPRequestHandler
-from http import cookies
 from urllib import parse, request
 from jinja2 import Template
 
 import json
+import re
 
 from Test_creator import Test
 from Profile_creator import TeacherProfile
@@ -20,11 +20,16 @@ class Handler(BaseHTTPRequestHandler):
 				self.wfile.write(bytes(page_display, 'utf8'))
 	
 
+	def load_new_profile(self):
+		with open('Templates/New_profile.html') as html_file:
+				page_display = Template(html_file.read()).render()
+				self.wfile.write(bytes(page_display, 'utf8'))
+
+
 	def load_test_editor(self):
-		path = self.path.translate({ord('?'): None})
 		editor_variables = {
 			'current_tests': self.tests,
-			'path': path,
+			'path': self.path,
 		}
 
 		with open('Templates/Test_editor.html') as html_file:
@@ -46,9 +51,9 @@ class Handler(BaseHTTPRequestHandler):
 	def load_question_detail(self, url_info):
 		new_path = url_info[0:-1]
 		new_path = ('/').join(new_path)
-		test_name = parse.unquote_plus(url_info[2])
+		test_name = parse.unquote_plus(url_info[-2])
 		test = self.tests[test_name]
-		question_number = int(url_info[3].split('question')[1].split('detail')[0])
+		question_number = int(url_info[-1].split('question')[1].split('detail')[0])
 		question = test.question_list[question_number - 1]
 		answers = self.tests[test_name].questions[question]
 		correct_answer = answers[-1]
@@ -96,7 +101,7 @@ class Handler(BaseHTTPRequestHandler):
 
 
 	def create_new_test(self, test_name, number_of_choices):
-		#In case both forms are not filled in
+		#This will get moved to teacher profile also, I think
 		if test_name == '' or number_of_choices == '':
 			with open('Templates/New_test.html', 'r') as html_file:
 				html = Template(html_file.read()).render()
@@ -117,7 +122,7 @@ class Handler(BaseHTTPRequestHandler):
 			pretty_url_info_last = parse.unquote_plus(url_info[-1])
 
 			#Go to editable detail on a specific question which has already been entered
-			if len(url_info) >= 4 and 'question' in url_info[3]:
+			if 'question' in url_info[-1]:
 				self.load_question_detail(url_info)
 
 			#Go to screen to add questions to a specific test
@@ -138,18 +143,27 @@ class Handler(BaseHTTPRequestHandler):
 
 	def do_POST(self):
 		self.send_response(200)
-		self.end_headers()
+		current_user = re.search('Cookie:.*user=([\w\-_\.\*]*)', self.headers.as_string())
+		print(current_user.group(1))
+	
 
 		url_info = self.path.split('/')
 		form_input = parse.unquote_plus(self.rfile.read(int(self.headers.get('content-length'))).decode('utf8')).split('=')
 
 		#Go to test creator, where a new test is given a name and number of multiple choice answers
-		if len(url_info) >= 3 and'new' in url_info[2]:
+		if url_info[-1] == 'new':
+			self.end_headers()
 			url_info.pop()
 			self.load_new_test(url_info)
 
+		elif url_info[-1] == 'new_profile':
+			self.end_headers()
+			self.load_new_profile()
+
+
 		#Create a new instance of class Test, and go to screen to add questions to that test
 		elif form_input[0] == 'test_name':
+			self.end_headers()
 			test_name = form_input[1].split('&')[0]
 			number_of_choices = form_input[2]
 			new_test = self.create_new_test(test_name, number_of_choices)
@@ -158,6 +172,7 @@ class Handler(BaseHTTPRequestHandler):
 
 		#Add a question to the existing test and remain on the same screen
 		elif form_input[0] == 'new_question':
+			self.end_headers()
 			test_name = parse.unquote_plus(url_info[-1])
 			test = self.tests[test_name]
 			test = test.add_question(form_input, url_info)
@@ -165,6 +180,7 @@ class Handler(BaseHTTPRequestHandler):
 
 		#Change a question on the existing test and return to the add questions screen
 		elif 'edited_question' in form_input[0]:
+			self.end_headers()
 			question_number = int(form_input[0].split(' ')[1])
 			test_name = parse.unquote_plus(url_info[-1])
 			test = self.tests[test_name]
@@ -172,20 +188,31 @@ class Handler(BaseHTTPRequestHandler):
 			self.load_add_questions(url_info, test_name)
 
 		elif 'delete' in form_input[0]:
+			self.end_headers()
 			question_number = int(form_input[0].split(' ')[1])
 			test_name = parse.unquote_plus(url_info[-1])
 			test = self.tests[test_name]
 			test = test.delete_question(question_number)
 			self.load_add_questions(url_info, test_name)
 
+		elif form_input[0] == 'new_username':
+			username = form_input[1].split('&')[0]
+			password = form_input[2]
+			user_profile = TeacherProfile(username, password)
+			self.send_header('Set-Cookie', 'user={}; HttpOnly'.format(username))
+			self.end_headers()
+			self.load_test_editor()
+
 		elif form_input[0] == 'username':
+			self.end_headers()
 			try:
 				username = form_input[1].split('&')[0]
+				password = form_input[2]
 				with open(username + '.json', 'r', encoding='utf-8') as f:
 					profile_vars = json.load(f)
-				print(profile_vars)
 			except FileNotFoundError:
 				self.load_login_page()
+
 
 		return
 
