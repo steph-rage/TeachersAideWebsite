@@ -12,9 +12,9 @@ class TeacherProfile:
 		self.averages = {}
 		self.students = {}
 
-	def save_profile(self):
+	def save(self):
 		with open(self.profile_name + '.json', mode='w', encoding='utf-8') as f:
-			json.dump(self.profile_name, f, indent=4)
+			json.dump(vars(self), f, indent=4)
 
 
 	def create_test(self, test_name, number_of_choices):

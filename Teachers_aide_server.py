@@ -1,6 +1,8 @@
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib import parse, request
 from jinja2 import Template
+from http import cookies
+from time import time
 
 import json
 import re
@@ -100,6 +102,19 @@ class Handler(BaseHTTPRequestHandler):
 		self.wfile.write(bytes(html, 'utf8'))
 
 
+	def send_cookie(self, username):
+		user_cookie = cookies.SimpleCookie()
+		user_cookie["user"] = username
+		user_cookie['user']['expires'] = time()+1
+		self.send_header(user_cookie)
+
+	def validate_user(self):
+		try:
+			current_user = (re.search('Cookie:.*user=([\w\-_\.\*]*)', self.headers.as_string())).group(1)
+		except AttributeError:
+			pass
+
+
 	def create_new_test(self, test_name, number_of_choices):
 		#This will get moved to teacher profile also, I think
 		if test_name == '' or number_of_choices == '':
@@ -143,9 +158,6 @@ class Handler(BaseHTTPRequestHandler):
 
 	def do_POST(self):
 		self.send_response(200)
-		current_user = re.search('Cookie:.*user=([\w\-_\.\*]*)', self.headers.as_string())
-		print(current_user.group(1))
-	
 
 		url_info = self.path.split('/')
 		form_input = parse.unquote_plus(self.rfile.read(int(self.headers.get('content-length'))).decode('utf8')).split('=')
@@ -199,7 +211,7 @@ class Handler(BaseHTTPRequestHandler):
 			username = form_input[1].split('&')[0]
 			password = form_input[2]
 			user_profile = TeacherProfile(username, password)
-			self.send_header('Set-Cookie', 'user={}; HttpOnly'.format(username))
+			
 			self.end_headers()
 			self.load_test_editor()
 
