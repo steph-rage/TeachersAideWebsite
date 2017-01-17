@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib import parse, request
 from jinja2 import Template
@@ -11,10 +12,14 @@ from Profile_creator import TeacherProfile
 
 class Handler(BaseHTTPRequestHandler):
 
-	def load_login_page(self):
+	def load_login_page(self, message='', username=''):
+		optional_message = {
+			'message': message,
+			'username': username,
+		}
 		self.send_header('Set-Cookie', 'user=; path=/; HTTPOnly; expires=Thu, 01-Jan-1970 00:00:00 GMT')
 		with open('Templates/Login_page.html') as html_file:
-				page_display = Template(html_file.read()).render()
+				page_display = Template(html_file.read()).render(optional_message)
 				self.wfile.write(bytes(page_display, 'utf8'))
 	
 
@@ -177,17 +182,22 @@ class Handler(BaseHTTPRequestHandler):
 		elif form_input[0] == 'username':
 			try:
 				username = form_input[1].split('&')[0]
-				password = form_input[2]
+				entered_password = form_input[2]
 				self.send_response(200)
-				self.set_cookie(username)
-				self.end_headers()
 				user_profile = self.decode_JSON(username)
-				self.load_test_editor(user_profile)
-				return
+				if entered_password == user_profile.password:
+					self.set_cookie(username)
+					self.end_headers()
+					self.load_test_editor(user_profile)
+					return
+				else:
+					self.send_response(200)
+					self.end_headers()
+					self.load_login_page('The password you entered was incorrect, please try again', username)
 			except FileNotFoundError:
 				self.send_response(200)
 				self.end_headers()
-				self.load_login_page()
+				self.load_login_page('The username you entered does not exist. Please try again or create a new profile')
 				return
 
 		else:
