@@ -18,11 +18,16 @@ class TeacherProfile:
 		with open(self.username + '.json', mode='w', encoding='utf-8') as f:
 			json.dump(vars(self), f, indent=4)
 
-
-	def create_test(self, test_name, number_of_choices):
+	def create_new_test(self, test_name, number_of_choices):
+		if test_name == '' or number_of_choices == '':
+			with open('Templates/New_test.html', 'r') as html_file:
+				html = Template(html_file.read()).render()
+			self.wfile.write(bytes(html, 'utf8'))
+		number_of_choices = int(number_of_choices)
 		new_test = Test(test_name, number_of_choices)
-		self.tests[name] = new_test
-		self.averages[name] = new_test.average
+		self.tests[test_name] = new_test
+		self.averages[test_name] = new_test.average
+		return new_test
 
 	
 	def administer_test(self):

@@ -127,18 +127,6 @@ class Handler(BaseHTTPRequestHandler):
 		return self.decode_JSON(username)
 
 
-	def create_new_test(self, test_name, number_of_choices):
-		#This will get moved to teacher profile also, I think
-		if test_name == '' or number_of_choices == '':
-			with open('Templates/New_test.html', 'r') as html_file:
-				html = Template(html_file.read()).render()
-			self.wfile.write(bytes(html, 'utf8'))
-		number_of_choices = int(number_of_choices)
-
-		return Test(test_name, number_of_choices)
-
-
-
 	def do_GET(self):
 		self.send_response(200)
 		self.end_headers()
@@ -210,7 +198,6 @@ class Handler(BaseHTTPRequestHandler):
 			except AttributeError:
 				pass
 			
-
 			#Go to test creator, where a new test is given a name and number of multiple choice answers
 			if url_info[-1] == 'new':
 				url_info.pop()
@@ -224,8 +211,7 @@ class Handler(BaseHTTPRequestHandler):
 			elif form_input[0] == 'test_name':
 				test_name = form_input[1].split('&')[0]
 				number_of_choices = form_input[2]
-				new_test = self.create_new_test(test_name, number_of_choices)
-				user_profile.tests[test_name] = new_test
+				new_test = user_profile.create_new_test(test_name, number_of_choices)
 				self.load_add_questions(url_info, test_name, user_profile)
 
 			#Add a question to the existing test and remain on the same screen
