@@ -124,7 +124,7 @@ class Handler(BaseHTTPRequestHandler):
 
 	def validate_user(self):
 		username = (re.search('Cookie:.*user=([\w\-_\.\*]*)', self.headers.as_string())).group(1)
-		current_user = self.decode_JSON(username)
+		return self.decode_JSON(username)
 
 
 	def create_new_test(self, test_name, number_of_choices):
