@@ -5,15 +5,17 @@ from Test_creator import Test
 
 
 class TeacherProfile:
-	def __init__(self, profile_name, password):
-		self.profile_name = profile_name
+	def __init__(self, username, password):
+		self.username = username
 		self.password = password 
 		self.tests = {}
 		self.averages = {}
 		self.students = {}
 
 	def save(self):
-		with open(self.profile_name + '.json', mode='w', encoding='utf-8') as f:
+		for test_name, test in self.tests.items():
+			self.tests[test_name] = vars(test)
+		with open(self.username + '.json', mode='w', encoding='utf-8') as f:
 			json.dump(vars(self), f, indent=4)
 
 
@@ -23,7 +25,6 @@ class TeacherProfile:
 		self.averages[name] = new_test.average
 
 	
-
 	def administer_test(self):
 		test_name = ''
 		password = ''
@@ -101,7 +102,7 @@ class TeacherProfile:
 
 	#Quit the program when done and save the profile for later using pickle
 	def quit(self):
-		with open(self.profile_name, 'wb') as save_file:
+		with open(self.username, 'wb') as save_file:
 			pickle.dump(self, save_file, pickle.HIGHEST_PROTOCOL)
 
 
