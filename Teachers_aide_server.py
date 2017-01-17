@@ -17,7 +17,8 @@ class Handler(BaseHTTPRequestHandler):
 			'message': message,
 			'username': username,
 		}
-		self.send_header('Set-Cookie', 'user=; path=/; HTTPOnly; expires=Thu, 01-Jan-1970 00:00:00 GMT')
+		#self.send_header('Set-Cookie', 'user=; path=/; expires=Thu, 01-Jan-1970 00:00:00 GMT; HTTPOnly')
+		self.end_headers()
 		with open('Templates/Login_page.html') as html_file:
 				page_display = Template(html_file.read()).render(optional_message)
 				self.wfile.write(bytes(page_display, 'utf8'))
@@ -105,6 +106,7 @@ class Handler(BaseHTTPRequestHandler):
 
 	def set_cookie(self, username):
 		self.send_header('Set-Cookie', 'user={}; path=/; HTTPOnly'.format(username))
+		self.end_headers()
 
 
 	def decode_JSON(self, username):
@@ -134,7 +136,6 @@ class Handler(BaseHTTPRequestHandler):
 
 	def do_GET(self):
 		self.send_response(200)
-		self.end_headers()
 
 		#Any get request in the editor part of the site, after successful login
 		if 'editor' in self.path:
@@ -144,15 +145,18 @@ class Handler(BaseHTTPRequestHandler):
 
 			#Go to editable detail on a specific question which has already been entered
 			if 'question' in url_info[-1]:
+				self.set_cookie(user_profile.username)
 				self.load_question_detail(url_info, user_profile)
 
 			#Go to screen to add questions to a specific test
 			elif pretty_url_info_last in user_profile.tests:
 				test_name = pretty_url_info_last
+				self.set_cookie(user_profile.username)
 				self.load_add_questions(url_info, test_name, user_profile)
 
 			#Go to main page for test editor
 			else:
+				self.set_cookie(user_profile.username)
 				self.load_test_editor(user_profile)
 			user_profile.save()
 
@@ -164,17 +168,16 @@ class Handler(BaseHTTPRequestHandler):
 
 
 	def do_POST(self):
+		self.send_response(200)
 
 		url_info = self.path.split('/')
 		form_input = parse.unquote_plus(self.rfile.read(int(self.headers.get('content-length'))).decode('utf8')).split('=')
 
 		if form_input[0] == 'new_username':
-			self.send_response(200)
 			username = form_input[1].split('&')[0]
 			password = form_input[2]
 			user_profile = TeacherProfile(username, password)
 			self.set_cookie(username)
-			self.end_headers()
 			self.load_test_editor(user_profile)
 			user_profile.save()
 			return
@@ -183,37 +186,28 @@ class Handler(BaseHTTPRequestHandler):
 			try:
 				username = form_input[1].split('&')[0]
 				entered_password = form_input[2]
-				self.send_response(200)
 				user_profile = self.decode_JSON(username)
 				if entered_password == user_profile.password:
 					self.set_cookie(username)
-					self.end_headers()
 					self.load_test_editor(user_profile)
 					return
 				else:
-					self.send_response(200)
-					self.end_headers()
 					self.load_login_page('The password you entered was incorrect, please try again', username)
 			except FileNotFoundError:
-				self.send_response(200)
-				self.end_headers()
 				self.load_login_page('The username you entered does not exist. Please try again or create a new profile')
 				return
 
 		else:
-			self.send_response(200)
-			self.end_headers()
-			try:
-				user_profile = self.validate_user()
-			except AttributeError:
-				pass
+			user_profile = self.validate_user()
 			
 			#Go to test creator, where a new test is given a name and number of multiple choice answers
 			if url_info[-1] == 'new':
 				url_info.pop()
+				self.set_cookie(user_profile.username)
 				self.load_new_test(url_info)
 
 			elif url_info[-1] == 'new_profile':
+				self.set_cookie(user_profile.username)
 				self.load_new_profile()
 
 
@@ -222,6 +216,7 @@ class Handler(BaseHTTPRequestHandler):
 				test_name = form_input[1].split('&')[0]
 				number_of_choices = form_input[2]
 				new_test = user_profile.create_new_test(test_name, number_of_choices)
+				self.set_cookie(user_profile.username)
 				self.load_add_questions(url_info, test_name, user_profile)
 
 			#Add a question to the existing test and remain on the same screen
@@ -229,6 +224,7 @@ class Handler(BaseHTTPRequestHandler):
 				test_name = parse.unquote_plus(url_info[-1])
 				test = user_profile.tests[test_name]
 				test = test.add_question(form_input, url_info)
+				self.set_cookie(user_profile.username)
 				self.load_add_questions(url_info, test_name, user_profile)
 
 			#Change a question on the existing test and return to the add questions screen
@@ -237,6 +233,7 @@ class Handler(BaseHTTPRequestHandler):
 				test_name = parse.unquote_plus(url_info[-1])
 				test = user_profile.tests[test_name]
 				test = test.edit_question(question_number, form_input, url_info)
+				self.set_cookie(user_profile.username)
 				self.load_add_questions(url_info, test_name, user_profile)
 
 			elif 'delete' in form_input[0]:
@@ -244,6 +241,7 @@ class Handler(BaseHTTPRequestHandler):
 				test_name = parse.unquote_plus(url_info[-1])
 				test = user_profile.tests[test_name]
 				test = test.delete_question(question_number)
+				self.set_cookie(user_profile.username)
 				self.load_add_questions(url_info, test_name, user_profile)
 
 			try:
