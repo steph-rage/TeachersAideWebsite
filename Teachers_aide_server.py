@@ -198,7 +198,10 @@ class Handler(BaseHTTPRequestHandler):
 				return
 
 		else:
-			user_profile = self.validate_user()
+			try:
+				user_profile = self.validate_user()
+			except FileNotFoundError:
+				pass
 			
 			#Go to test creator, where a new test is given a name and number of multiple choice answers
 			if url_info[-1] == 'new':
@@ -207,7 +210,7 @@ class Handler(BaseHTTPRequestHandler):
 				self.load_new_test(url_info)
 
 			elif url_info[-1] == 'new_profile':
-				self.set_cookie(user_profile.username)
+				self.end_headers()
 				self.load_new_profile()
 
 

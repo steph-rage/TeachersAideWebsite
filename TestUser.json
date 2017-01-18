@@ -1,27 +1,44 @@
 {
-    "password": "password",
-    "username": "TestUser",
-    "students": {},
     "tests": {
-        "Test 1": {
+        "Test 2": {
+            "questions": {
+                "Why is the sky blue?": [
+                    "Magic",
+                    "Science",
+                    "I don't know",
+                    "B"
+                ],
+                "What is your favorite color?": [
+                    "Orange",
+                    "Black",
+                    "Purple",
+                    "C"
+                ]
+            },
+            "url_name": "Test+2",
+            "question_list": [
+                "What is your favorite color?",
+                "Why is the sky blue?"
+            ],
+            "name": "Test 2",
+            "choices": 3,
             "average": 0,
-            "choices": 4,
             "answer_choices": [
                 "A",
                 "B",
-                "C",
-                "D"
+                "C"
             ],
-            "question_list": [
-                "What's 2 + 2?",
-                "What's 1 * 1?",
-                "What's 4 * 5 ?",
-                "What's 6 + 7?",
-                "What's 3 * 2?"
-            ],
-            "name": "Test 1",
-            "scored_students": {},
+            "scored_students": {}
+        },
+        "Test 1": {
             "questions": {
+                "What's 4 * 5 ?": [
+                    "10",
+                    "20",
+                    "30",
+                    "40",
+                    "B"
+                ],
                 "What's 6 + 7?": [
                     "13",
                     "15",
@@ -49,47 +66,30 @@
                     "3",
                     "4",
                     "B"
-                ],
-                "What's 4 * 5 ?": [
-                    "10",
-                    "20",
-                    "30",
-                    "40",
-                    "B"
                 ]
             },
-            "url_name": "Test+1"
-        },
-        "Test 2": {
+            "url_name": "Test+1",
+            "question_list": [
+                "What's 2 + 2?",
+                "What's 1 * 1?",
+                "What's 4 * 5 ?",
+                "What's 6 + 7?",
+                "What's 3 * 2?"
+            ],
+            "name": "Test 1",
+            "choices": 4,
             "average": 0,
-            "choices": 3,
             "answer_choices": [
                 "A",
                 "B",
-                "C"
+                "C",
+                "D"
             ],
-            "question_list": [
-                "What is your favorite color?",
-                "Why is the sky blue?"
-            ],
-            "name": "Test 2",
-            "scored_students": {},
-            "questions": {
-                "What is your favorite color?": [
-                    "Orange",
-                    "Black",
-                    "Purple",
-                    "C"
-                ],
-                "Why is the sky blue?": [
-                    "Magic",
-                    "Science",
-                    "I don't know",
-                    "B"
-                ]
-            },
-            "url_name": "Test+2"
+            "scored_students": {}
         }
     },
-    "averages": {}
+    "password": "password",
+    "averages": {},
+    "students": {},
+    "username": "TestUser"
 }
