@@ -17,7 +17,7 @@ class Handler(BaseHTTPRequestHandler):
 			'message': message,
 			'username': username,
 		}
-		#self.send_header('Set-Cookie', 'user=; path=/; expires=Thu, 01-Jan-1970 00:00:00 GMT; HTTPOnly')
+		self.send_header('Set-Cookie', 'user=; path=/; HTTPOnly')
 		self.end_headers()
 		with open('Templates/Login_page.html') as html_file:
 				page_display = Template(html_file.read()).render(optional_message)
